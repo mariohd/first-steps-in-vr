@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+    <title>Maze Escape 2</title>
+
+    <script src="https://aframe.io/releases/0.3.2/aframe.js"></script>
+    <script src="https://cdn.rawgit.com/donmccurdy/aframe-extras/v2.6.1/dist/aframe-extras.js"></script>
+    <script src="map.js"></script>
+
+</head>
+<body>
+
+<audio id="scream" style="display: none;">
+  <source src="deathScream.mp3" type="audio/mpeg">
+</audio>
+
+<audio id="whispers" style="display: none;">
+  <source src="whispers.mp3" type="audio/mpeg">
+</audio>
+
+<a-scene fog="type: exponential; color: #101010; density: 0.25;" sound="src: url(ambient.mp3); autoplay: true; loop: true;">
+    <a-assets>
+        <img id="texture-floor" src="floor.jpg">
+        <img id="texture-wall" src="wall.jpg">
+        <img id="texture-ceiling" src="ceiling.jpg">
+    </a-assets>
+
+    <a-entity id="player"
+              camera
+              universal-controls="movementControls: automove, gamepad, keyboard"
+              mouse-controls
+              kinematic-body
+              sound="src: url(heartbeat.mp3); autoplay: true; loop: true; volume: 0.2;">
+        <a-light id="playerLight" color="#fff" intensity=".85" type="hemisphere"></a-light>
+    </a-entity>
+
+    <a-entity id="walls"></a-entity>
+
+    <a-entity>
+        <a-box id="ground" static-body depth="100" height="0.1" width="100" material="src: #texture-floor; repeat: 128 128"></a-box>
+    </a-entity>
+
+    <a-entity id="ceiling" static-body geometry="primitive: box; depth: 100; height: 0.1; width: 100;" material="src: #texture-ceiling; repeat: 128 128" position="0 3 0"></a-entity>
+
+</a-scene>
+
+<script>
+
+    AFRAME.registerComponent('automove-controls', {
+        init: function () {
+            this.speed = 0.20;
+            this.isMoving = true;
+            this.velocityDelta = new THREE.Vector3();
+        },
+        isVelocityActive: function () {
+            return this.isMoving;
+        },
+        getVelocityDelta: function () {
+            this.velocityDelta.z = this.isMoving ? -this.speed : 0;
+            return this.velocityDelta.clone();
+        }
+    });
+    var player =  document.querySelector('#player');
+
+    document.querySelector('a-scene').addEventListener('render-target-loaded', function () {
+        var WALL_SIZE = 5,
+            WALL_HEIGHT = 3;
+        var el = document.querySelector('#walls');
+        var wall;
+
+        var platformSize = {
+            x: parseInt(document.querySelector('#ground').getAttribute('width')),
+            y: parseInt(document.querySelector('#ground').getAttribute('depth'))
+        }
+
+        setInterval(() => {
+            document.querySelector("#scream").play();
+        }, 15000 + Math.random() * 30000)
+
+        setInterval(() => {
+            document.querySelector("#whispers").play();
+        }, 15000 + Math.random() * 30000)
+
+        // barriers
+        var edge = (platformSize.x/2) - (WALL_SIZE/2);
+        buildWallsX(-edge);
+        buildWallsX(edge);
+        buildWallsZ(edge);
+        buildWallsZ(-edge);
+
+       function buildWallsX(line) {
+            for (var p = -edge; p <= edge; p += WALL_SIZE) {
+                createWall(-p, line);
+                createWall(p, line);
+            } 
+        }
+
+        function buildWallsZ(line) {
+            for (var p = -edge; p <= edge; p += WALL_SIZE) {
+                createWall(line, -p);
+                createWall(line, p);
+            } 
+        }
+
+        function createWall(positionX, positionZ) {
+            wall = document.createElement('a-box');
+            el.appendChild(wall);
+            wall.setAttribute('color', '#fff');
+            wall.setAttribute('material', 'src: #texture-wall;');
+            wall.setAttribute('width', WALL_SIZE);
+            wall.setAttribute('height', WALL_HEIGHT);
+            wall.setAttribute('depth', WALL_SIZE);
+            wall.setAttribute('position', positionX + ' 1.5 ' + positionZ);
+            wall.setAttribute('static-body', '');
+        }
+
+
+        for (var x = 0; x < map.height; x++)  {
+            for (var y = 0; y < map.width; y++) {
+
+                var i = y*map.width + x;
+                var position = (x-map.width/2)*WALL_SIZE + ' ' + 1.5 + ' ' + (y-map.height/2)*WALL_SIZE;
+                if (map.data[i] === 1) {
+                    // Create wall
+                    wall = document.createElement('a-box');
+                    el.appendChild(wall);
+                    wall.setAttribute('color', '#fff');
+                    wall.setAttribute('material', 'src: #texture-wall;');
+                    wall.setAttribute('width', WALL_SIZE);
+                    wall.setAttribute('height', WALL_HEIGHT);
+                    wall.setAttribute('depth', WALL_SIZE);
+                    wall.setAttribute('position', position);
+                    wall.setAttribute('static-body', '');
+                }
+
+                if (map.data[i] === 2)  {
+                    document.querySelector('#player').setAttribute('position', position)
+
+                }
+
+            }
+        }
+        console.info('Walls added.');
+    });
+
+</script>
+</body>
+</html>
