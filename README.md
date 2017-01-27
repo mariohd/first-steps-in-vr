@@ -3,7 +3,7 @@ Maze Escape 2
 
  Screenshots
 ------------
-![Maze Escape 2](screenshots/maze.png)
+![Maze Escape 2](screenshots/maze.jpg)
 ![Map](screenshots/tiled.png)
 
 This game was developed with the following frameworks.
